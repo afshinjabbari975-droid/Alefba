@@ -1,0 +1,1405 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>بازی جایگاه حروف الفبا | طراحی: افشین جباری</title>
+    <!-- Vazirmatn Font from Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #ec4899;
+            --accent: #f59e0b;
+            --success: #10b981;
+            --danger: #ef4444;
+            --bg-gradient: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #ec4899 100%);
+            --card-bg: rgba(255, 255, 255, 0.96);
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.08);
+            --shadow-btn: 0 6px 0 rgba(0, 0, 0, 0.18);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Vazirmatn', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Animated background decorative circles */
+        .bg-shape {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            animation: float 8s infinite ease-in-out;
+            z-index: 0;
+            pointer-events: none;
+        }
+        .shape-1 { width: 180px; height: 180px; top: 5%; left: 8%; animation-delay: 0s; }
+        .shape-2 { width: 120px; height: 120px; bottom: 10%; right: 5%; animation-delay: 2s; }
+        .shape-3 { width: 90px; height: 90px; top: 40%; right: 15%; animation-delay: 4s; }
+        .shape-4 { width: 150px; height: 150px; bottom: 20%; left: 12%; animation-delay: 1s; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-20px) scale(1.05); }
+        }
+
+        /* Game Container */
+        #app-container {
+            width: 100%;
+            max-width: 580px;
+            min-height: 650px;
+            background: var(--card-bg);
+            border-radius: 32px;
+            box-shadow: var(--shadow-lg);
+            position: relative;
+            z-index: 10;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            border: 4px solid rgba(255, 255, 255, 0.4);
+        }
+
+        /* Screen transitions */
+        .screen {
+            display: none;
+            flex-direction: column;
+            padding: 24px;
+            flex: 1;
+            animation: fadeIn 0.35s ease-out;
+        }
+        .screen.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Top Header Area inside Game */
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 16px;
+            background: #f8fafc;
+            border-radius: 20px;
+            margin-bottom: 16px;
+            border: 2px solid #e2e8f0;
+        }
+
+        .stat-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: var(--text-main);
+            background: white;
+            padding: 6px 12px;
+            border-radius: 14px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border: 1px solid #f1f5f9;
+        }
+
+        .stat-badge span.icon {
+            font-size: 1.2rem;
+        }
+
+        /* Progress Bar / Timer Bar */
+        .timer-container {
+            width: 100%;
+            height: 12px;
+            background: #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 16px;
+            position: relative;
+        }
+        .timer-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #3b82f6);
+            width: 100%;
+            transition: width 0.1s linear, background-color 0.3s ease;
+        }
+        .timer-bar.warning {
+            background: linear-gradient(90deg, #ef4444, #f59e0b);
+        }
+
+        /* Title & Intro Typography */
+        .game-title {
+            font-size: 2.1rem;
+            font-weight: 900;
+            text-align: center;
+            color: var(--primary-dark);
+            margin-top: 10px;
+            margin-bottom: 8px;
+            text-shadow: 0 2px 4px rgba(79, 70, 229, 0.15);
+        }
+
+        .game-subtitle {
+            font-size: 1.05rem;
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 24px;
+            line-height: 1.6;
+            font-weight: 600;
+        }
+
+        /* Buttons */
+        .btn {
+            border: none;
+            outline: none;
+            cursor: pointer;
+            border-radius: 20px;
+            padding: 16px 28px;
+            font-size: 1.15rem;
+            font-weight: 800;
+            transition: all 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: var(--shadow-btn);
+            position: relative;
+            top: 0;
+            text-decoration: none;
+        }
+
+        .btn:active {
+            top: 4px;
+            box-shadow: 0 2px 0 rgba(0, 0, 0, 0.18);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            color: white;
+            width: 100%;
+            font-size: 1.3rem;
+            padding: 18px;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #ec4899, #db2777);
+            color: white;
+            width: 100%;
+        }
+
+        .btn-accent {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+            width: 100%;
+        }
+
+        .btn-outline {
+            background: white;
+            color: var(--primary-dark);
+            border: 2px solid var(--primary);
+            box-shadow: 0 4px 0 var(--primary);
+        }
+
+        .btn-outline:active {
+            box-shadow: 0 1px 0 var(--primary);
+        }
+
+        /* Designer Profile Card */
+        .designer-card {
+            background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+            border: 2px solid #e2e8f0;
+            border-radius: 22px;
+            padding: 16px;
+            margin: 18px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+        }
+
+        .designer-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .designer-name {
+            font-weight: 800;
+            color: var(--text-main);
+            font-size: 1.05rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .designer-channel {
+            direction: ltr;
+            text-align: left;
+            display: inline-block;
+            background: #e0e7ff;
+            color: #4338ca;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-weight: 800;
+            font-size: 0.95rem;
+            letter-spacing: 0.5px;
+            width: fit-content;
+        }
+
+        /* Question Display Box */
+        .question-box {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: white;
+            border-radius: 28px;
+            padding: 30px 20px;
+            text-align: center;
+            margin-bottom: 24px;
+            box-shadow: 0 12px 20px -5px rgba(79, 70, 229, 0.4);
+            position: relative;
+            overflow: hidden;
+            border: 4px solid rgba(255, 255, 255, 0.25);
+        }
+
+        .question-label {
+            font-size: 1.1rem;
+            font-weight: 600;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+
+        .question-value {
+            font-size: 4.5rem;
+            font-weight: 900;
+            line-height: 1.1;
+            text-shadow: 0 4px 10px rgba(0,0,0,0.25);
+            margin: 10px 0;
+            display: inline-block;
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.6); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Choices Grid */
+        .choices-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .choice-btn {
+            background: white;
+            border: 3px solid #cbd5e1;
+            border-radius: 24px;
+            padding: 22px 10px;
+            font-size: 2.1rem;
+            font-weight: 800;
+            color: var(--text-main);
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 6px 0 #cbd5e1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .choice-btn:hover {
+            transform: translateY(-3px);
+            border-color: var(--primary);
+            box-shadow: 0 9px 0 var(--primary);
+            color: var(--primary-dark);
+        }
+
+        .choice-btn:active {
+            transform: translateY(3px);
+            box-shadow: 0 2px 0 #cbd5e1;
+        }
+
+        .choice-btn.correct {
+            background: var(--success) !important;
+            border-color: #059669 !important;
+            box-shadow: 0 6px 0 #059669 !important;
+            color: white !important;
+            animation: celebrate 0.5s ease;
+        }
+
+        .choice-btn.wrong {
+            background: var(--danger) !important;
+            border-color: #dc2626 !important;
+            box-shadow: 0 6px 0 #dc2626 !important;
+            color: white !important;
+            animation: shake 0.4s ease;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+
+        @keyframes celebrate {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+        }
+
+        /* Alphabet Table Screen */
+        .alphabet-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 6px;
+            margin-bottom: 20px;
+            direction: rtl;
+        }
+
+        .alpha-card {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 10px 8px;
+            text-align: center;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .alpha-card:hover {
+            background: #e0e7ff;
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .alpha-num {
+            font-size: 0.85rem;
+            color: var(--primary-dark);
+            font-weight: 800;
+            background: #eef2ff;
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-bottom: 4px;
+        }
+
+        .alpha-char {
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: var(--text-main);
+        }
+
+        /* Result Screen Cards */
+        .result-box {
+            background: #f8fafc;
+            border: 3px solid #e2e8f0;
+            border-radius: 28px;
+            padding: 24px;
+            margin: 16px 0;
+            text-align: center;
+        }
+
+        .score-circle {
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #f59e0b, #ef4444);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px auto;
+            box-shadow: 0 10px 20px -5px rgba(245, 158, 11, 0.5);
+            border: 4px solid white;
+        }
+
+        .score-circle .val {
+            font-size: 2.2rem;
+            font-weight: 900;
+            line-height: 1;
+        }
+
+        .score-circle .lbl {
+            font-size: 0.8rem;
+            font-weight: 700;
+            opacity: 0.9;
+        }
+
+        .stats-row {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 2px dashed #cbd5e1;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-item .val {
+            font-size: 1.4rem;
+            font-weight: 900;
+            color: var(--text-main);
+        }
+
+        .stat-item .lbl {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .motivational-msg {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--primary-dark);
+            margin: 12px 0;
+        }
+
+        /* Level Selector Tabs */
+        .level-options {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .level-btn {
+            flex: 1;
+            padding: 12px 6px;
+            border-radius: 16px;
+            background: #f1f5f9;
+            border: 2px solid #cbd5e1;
+            font-weight: 800;
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .level-btn.selected {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary-dark);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        /* Mode Selector Cards */
+        .mode-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .mode-card {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 20px;
+            padding: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.2s;
+        }
+
+        .mode-card:hover, .mode-card.selected {
+            border-color: var(--primary);
+            background: #eef2ff;
+            transform: translateX(-4px);
+        }
+
+        .mode-card .mode-info h4 {
+            font-size: 1.1rem;
+            color: var(--text-main);
+            margin-bottom: 4px;
+            font-weight: 800;
+        }
+
+        .mode-card .mode-info p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .mode-card .mode-icon {
+            font-size: 1.8rem;
+            background: white;
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+        }
+
+        /* Confetti Canvas */
+        #confetti-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        /* Sound Toggle Button */
+        .sound-btn {
+            background: white;
+            border: 1px solid #e2e8f0;
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        /* Footer inside card */
+        .card-footer {
+            margin-top: auto;
+            padding-top: 16px;
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            border-top: 1px solid #f1f5f9;
+        }
+
+        /* Responsive Tweaks */
+        @media (max-width: 480px) {
+            .game-title { font-size: 1.7rem; }
+            .question-value { font-size: 3.8rem; }
+            .choice-btn { font-size: 1.8rem; padding: 18px 8px; }
+            .alphabet-grid { grid-template-columns: repeat(3, 1fr); }
+            #app-container { min-height: 580px; border-radius: 24px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Decorative background circles -->
+    <div class="bg-shape shape-1"></div>
+    <div class="bg-shape shape-2"></div>
+    <div class="bg-shape shape-3"></div>
+    <div class="bg-shape shape-4"></div>
+
+    <div id="app-container">
+        <!-- Confetti Canvas -->
+        <canvas id="confetti-canvas"></canvas>
+
+        <!-- SCREEN 1: START SCREEN -->
+        <div id="start-screen" class="screen active">
+            <div style="text-align: center; margin-top: 15px;">
+                <div style="font-size: 3.5rem; margin-bottom: 5px;">🎮 🔠</div>
+                <h1 class="game-title">بازی جایگاه حروف الفبا</h1>
+                <p class="game-subtitle">با بازی کردن، جایگاه حروف الفبا را سریع و راحت یاد بگیر!</p>
+            </div>
+
+            <!-- Designer Information -->
+            <div class="designer-card">
+                <div class="designer-info">
+                    <span class="designer-name">
+                        <span style="font-size: 1.3rem;">👨‍🏫</span>
+                        طراح بازی: افشین جباری
+                    </span>
+                    <span style="font-size: 0.85rem; color: var(--text-muted);">آموزش ریاضی و هوش (ریاضی جت)</span>
+                </div>
+                <!-- Channel ID LTR -->
+                <div style="text-align: left; direction: ltr;">
+                    <a href="https://t.me/jabbari_riazijet" target="_blank" style="text-decoration: none;">
+                        <span class="designer-channel">@jabbari_riazijet</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Main Menu Buttons -->
+            <div style="display: flex; flex-direction: column; gap: 14px; margin-top: 10px;">
+                <button class="btn btn-primary" onclick="showScreen('level-select-screen')">
+                    <span>🚀 شروع بازی</span>
+                </button>
+                <button class="btn btn-outline" onclick="showScreen('alphabet-table-screen')">
+                    <span>📖 مشاهده جدول حروف الفبا</span>
+                </button>
+                <button class="btn btn-outline" style="border-color: #94a3b8; color: #475569;" onclick="showScreen('guide-screen')">
+                    <span>❓ راهنمای بازی</span>
+                </button>
+            </div>
+
+            <div class="card-footer">
+                <span>بهترین رکورد شما: </span>
+                <strong id="high-score-display" style="color: var(--primary-dark);">۰</strong> امتیاز
+            </div>
+        </div>
+
+        <!-- SCREEN 2: LEVEL & MODE SELECTOR -->
+        <div id="level-select-screen" class="screen">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h2 style="font-size: 1.4rem; color: var(--text-main); font-weight: 800;">انتخاب حالت و سطح بازی</h2>
+                <button class="btn btn-outline" style="padding: 8px 16px; font-size: 0.9rem;" onclick="showScreen('start-screen')">بازگشت</button>
+            </div>
+
+            <!-- Difficulty Levels -->
+            <label style="font-weight: 700; color: var(--text-main); margin-bottom: 8px; display: block;">سطح سختی بازی:</label>
+            <div class="level-options">
+                <div class="level-btn" onclick="selectDifficulty('easy')" id="diff-easy">
+                    🌱 آسان
+                    <div style="font-size: 0.75rem; opacity: 0.8;">حروف ابتدایی</div>
+                </div>
+                <div class="level-btn selected" onclick="selectDifficulty('medium')" id="diff-medium">
+                    ⭐ متوسط
+                    <div style="font-size: 0.75rem; opacity: 0.8;">حروف تصادفی</div>
+                </div>
+                <div class="level-btn" onclick="selectDifficulty('hard')" id="diff-hard">
+                    🔥 سخت
+                    <div style="font-size: 0.75rem; opacity: 0.8;">سرعت بالا</div>
+                </div>
+            </div>
+
+            <!-- Game Modes / Stages -->
+            <label style="font-weight: 700; color: var(--text-main); margin-bottom: 10px; display: block;">مرحله بازی را انتخاب کنید:</label>
+            <div class="mode-list">
+                <div class="mode-card selected" onclick="selectMode(1)" id="mode-1">
+                    <div class="mode-info">
+                        <h4>مرحله اول: حرف ➔ شماره جایگاه</h4>
+                        <p>حرف الفبا نمایش داده می‌شود و باید شماره جایگاه آن را انتخاب کنید.</p>
+                    </div>
+                    <div class="mode-icon">🔤</div>
+                </div>
+
+                <div class="mode-card" onclick="selectMode(2)" id="mode-2">
+                    <div class="mode-info">
+                        <h4>مرحله دوم: شماره جایگاه ➔ حرف</h4>
+                        <p>شماره جایگاه نمایش داده می‌شود و باید حرف مربوط به آن را انتخاب کنید.</p>
+                    </div>
+                    <div class="mode-icon">🔢</div>
+                </div>
+
+                <div class="mode-card" onclick="selectMode(3)" id="mode-3">
+                    <div class="mode-info">
+                        <h4>مرحله سوم: بازی سرعتی (ترکیبی)</h4>
+                        <p>چالش سرعتی با تایمر! سوالات ترکیبی با افزایش سختی و امتیاز.</p>
+                    </div>
+                    <div class="mode-icon">⚡</div>
+                </div>
+            </div>
+
+            <button class="btn btn-primary" style="margin-top: auto;" onclick="startGame()">
+                <span>شروع چالش! 🎯</span>
+            </button>
+        </div>
+
+        <!-- SCREEN 3: GAME PLAY SCREEN -->
+        <div id="game-screen" class="screen">
+            <!-- Game Header -->
+            <div class="game-header">
+                <div class="stat-badge">
+                    <span class="icon">⭐</span>
+                    <span id="score-val">۰</span>
+                </div>
+                <div class="stat-badge" style="color: var(--success);">
+                    <span class="icon">✓</span>
+                    <span id="correct-val">۰</span>
+                </div>
+                <div class="stat-badge" style="color: var(--danger);">
+                    <span class="icon">✗</span>
+                    <span id="wrong-val">۰</span>
+                </div>
+                <div class="stat-badge" style="color: var(--accent);">
+                    <span class="icon">🎯</span>
+                    <span id="acc-val">۱۰۰٪</span>
+                </div>
+                <button class="sound-btn" onclick="toggleSound()" id="sound-toggle-btn" title="صدا">
+                    🔊
+                </button>
+            </div>
+
+            <!-- Timer Bar -->
+            <div class="timer-container" id="timer-bar-wrapper">
+                <div class="timer-bar" id="timer-bar"></div>
+            </div>
+
+            <!-- Question Box -->
+            <div class="question-box" id="question-box">
+                <div class="question-label" id="question-label">جایگاه این حرف کدام است؟</div>
+                <div class="question-value" id="question-value">د</div>
+                <div style="font-size: 0.9rem; opacity: 0.8; margin-top: 8px;" id="question-help">الفبای فارسی ۳۲ حرف دارد</div>
+            </div>
+
+            <!-- Choices Grid -->
+            <div class="choices-grid" id="choices-grid">
+                <button class="choice-btn" onclick="checkAnswer(0)">۸</button>
+                <button class="choice-btn" onclick="checkAnswer(1)">۱۰</button>
+                <button class="choice-btn" onclick="checkAnswer(2)">۱۲</button>
+                <button class="choice-btn" onclick="checkAnswer(3)">۱۵</button>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto;">
+                <button class="btn btn-outline" style="padding: 10px 18px; font-size: 0.95rem;" onclick="endGame()">
+                    پایان بازی
+                </button>
+                <span style="font-size: 0.9rem; color: var(--text-muted); font-weight: 700;" id="game-mode-label">
+                    مرحله ۱: حرف به شماره
+                </span>
+            </div>
+        </div>
+
+        <!-- SCREEN 4: RESULT SCREEN -->
+        <div id="result-screen" class="screen">
+            <h2 style="text-align: center; font-size: 1.8rem; color: var(--text-main); font-weight: 900; margin-bottom: 8px;">
+                نتیجه بازی 🏆
+            </h2>
+
+            <div class="result-box">
+                <div class="score-circle">
+                    <span class="val" id="final-score">۰</span>
+                    <span class="lbl">امتیاز کل</span>
+                </div>
+
+                <div class="motivational-msg" id="motivational-msg">
+                    آفرین! تو یک قهرمان حروف الفبا هستی 🌟
+                </div>
+
+                <div class="stats-row">
+                    <div class="stat-item">
+                        <div class="val" style="color: var(--success);" id="final-correct">۰</div>
+                        <div class="lbl">پاسخ صحیح</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="val" style="color: var(--danger);" id="final-wrong">۰</div>
+                        <div class="lbl">پاسخ غلط</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="val" style="color: var(--primary);" id="final-acc">۰٪</div>
+                        <div class="lbl">درصد موفقیت</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="val" style="color: var(--accent);" id="final-best">۰</div>
+                        <div class="lbl">بهترین رکورد</div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-top: auto;">
+                <button class="btn btn-primary" onclick="startGame()">
+                    <span>🔄 شروع دوباره بازی</span>
+                </button>
+                <button class="btn btn-outline" onclick="showScreen('alphabet-table-screen')">
+                    <span>📖 مشاهده جدول حروف</span>
+                </button>
+                <button class="btn btn-outline" style="border-color: #cbd5e1; color: var(--text-main);" onclick="showScreen('start-screen')">
+                    <span>🏠 بازگشت به منوی اصلی</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- SCREEN 5: ALPHABET TABLE SCREEN -->
+        <div id="alphabet-table-screen" class="screen">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h2 style="font-size: 1.4rem; color: var(--text-main); font-weight: 800;">جدول کامل ۳۲ حرف الفبای فارسی</h2>
+                <button class="btn btn-outline" style="padding: 8px 16px; font-size: 0.9rem;" onclick="goBackFromTable()">بازگشت</button>
+            </div>
+
+            <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 14px;">
+                با مرور این جدول، شماره جایگاه هر حرف را حفظ کنید و در بازی رکورد بزنید:
+            </p>
+
+            <div class="alphabet-grid" id="alphabet-table-grid">
+                <!-- Dynamically filled by JS -->
+            </div>
+
+            <button class="btn btn-primary" style="margin-top: auto;" onclick="showScreen('level-select-screen')">
+                <span>تمرین کردم؛ بریم برای بازی! 🚀</span>
+            </button>
+        </div>
+
+        <!-- SCREEN 6: GUIDE SCREEN -->
+        <div id="guide-screen" class="screen">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h2 style="font-size: 1.4rem; color: var(--text-main); font-weight: 800;">راهنمای بازی</h2>
+                <button class="btn btn-outline" style="padding: 8px 16px; font-size: 0.9rem;" onclick="showScreen('start-screen')">بازگشت</button>
+            </div>
+
+            <div style="background: #f8fafc; border-radius: 20px; padding: 20px; line-height: 1.8; color: var(--text-main); font-size: 0.95rem; border: 2px solid #e2e8f0; margin-bottom: 20px;">
+                <p style="margin-bottom: 12px;">
+                    <strong>هدف بازی:</strong> یادگیری و حفظ ترتیب ۳۲ حرف الفبای فارسی و شماره جایگاه عددی هر حرف از <strong>۱ (الف)</strong> تا <strong>۳۲ (ی)</strong>.
+                </p>
+                <p style="margin-bottom: 12px;">
+                    <strong>مراحل بازی:</strong><br>
+                    • <strong>مرحله ۱:</strong> یک حرف (مثلاً «د») نمایش داده می‌شود؛ شما باید شماره آن (۱۰) را انتخاب کنید.<br>
+                    • <strong>مرحله ۲:</strong> شماره جایگاه (مثلاً ۱۰) نمایش داده می‌شود؛ شما باید حرف مربوطه («د») را انتخاب کنید.<br>
+                    • <strong>مرحله ۳:</strong> بازی سرعتی است! سوالات به صورت ترکیبی با زمان محدود نمایش داده می‌شوند.
+                </p>
+                <p>
+                    <strong>امتیازات و رکورد:</strong> با هر پاسخ صحیح، امتیاز می‌گیرید. بهترین رکورد شما به صورت خودکار در مرورگر یا موبایل ذخیره می‌شود.
+                </p>
+            </div>
+
+            <!-- Designer info badge -->
+            <div class="designer-card">
+                <div class="designer-info">
+                    <span class="designer-name">طراح بازی: افشین جباری</span>
+                    <span style="font-size: 0.85rem; color: var(--text-muted);">ریاضی و هوش دبستان و متوسطه</span>
+                </div>
+                <span class="designer-channel" style="direction: ltr;">@jabbari_riazijet</span>
+            </div>
+
+            <button class="btn btn-primary" style="margin-top: auto;" onclick="showScreen('level-select-screen')">
+                <span>شروع بازی 🎮</span>
+            </button>
+        </div>
+
+    </div>
+
+    <!-- JAVASCRIPT GAME LOGIC -->
+    <script>
+        /*******************************************************
+         * 1. PERSIAN ALPHABET DATA (32 LETTERS)
+         *******************************************************/
+        const ALPHABET = [
+            { id: 1, char: "الف" },
+            { id: 2, char: "ب" },
+            { id: 3, char: "پ" },
+            { id: 4, char: "ت" },
+            { id: 5, char: "ث" },
+            { id: 6, char: "ج" },
+            { id: 7, char: "چ" },
+            { id: 8, char: "ح" },
+            { id: 9, char: "خ" },
+            { id: 10, char: "د" },
+            { id: 11, char: "ذ" },
+            { id: 12, char: "ر" },
+            { id: 13, char: "ز" },
+            { id: 14, char: "ژ" },
+            { id: 15, char: "س" },
+            { id: 16, char: "ش" },
+            { id: 17, char: "ص" },
+            { id: 18, char: "ض" },
+            { id: 19, char: "ط" },
+            { id: 20, char: "ظ" },
+            { id: 21, char: "ع" },
+            { id: 22, char: "غ" },
+            { id: 23, char: "ف" },
+            { id: 24, char: "ق" },
+            { id: 25, char: "ک" },
+            { id: 26, char: "گ" },
+            { id: 27, char: "ل" },
+            { id: 28, char: "م" },
+            { id: 29, char: "ن" },
+            { id: 30, char: "و" },
+            { id: 31, char: "ه" },
+            { id: 32, char: "ی" }
+        ];
+
+        /*******************************************************
+         * 2. GAME STATE & SETTINGS
+         *******************************************************/
+        let state = {
+            mode: 1,           // 1: Char->Num, 2: Num->Char, 3: Speed (mixed)
+            difficulty: 'medium', // 'easy', 'medium', 'hard'
+            score: 0,
+            correct: 0,
+            wrong: 0,
+            highScore: 0,
+            currentQuestion: null,
+            options: [],
+            isAnswered: false,
+            timerInterval: null,
+            timeRemaining: 15,
+            totalTime: 15,
+            soundEnabled: true,
+            previousScreen: 'start-screen'
+        };
+
+        /*******************************************************
+         * 3. NUMBER FORMATTER (PERSIAN NUMERALS)
+         *******************************************************/
+        function toPersianNum(num) {
+            const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+            return String(num).replace(/\d/g, x => persianDigits[x]);
+        }
+
+        /*******************************************************
+         * 4. WEB AUDIO API SYNTHESIZER (NO EXTERNAL AUDIO FILES)
+         *******************************************************/
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            if (!state.soundEnabled) return;
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            try {
+                const now = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                if (type === 'correct') {
+                    // Cheerful Arpeggio
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523.25, now);       // C5
+                    osc.frequency.setValueAtTime(659.25, now + 0.1); // E5
+                    osc.frequency.setValueAtTime(783.99, now + 0.2); // G5
+                    osc.frequency.setValueAtTime(1046.50, now + 0.3);// C6
+
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.55);
+
+                    osc.start(now);
+                    osc.stop(now + 0.55);
+                } else if (type === 'wrong') {
+                    // Gentle Low Buzz
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(180, now);
+                    osc.frequency.setValueAtTime(140, now + 0.15);
+
+                    gain.gain.setValueAtTime(0.25, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+
+                    osc.start(now);
+                    osc.stop(now + 0.4);
+                } else if (type === 'click') {
+                    // Soft Click
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(600, now);
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+                    osc.start(now);
+                    osc.stop(now + 0.08);
+                } else if (type === 'win') {
+                    // Fanfare
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523.25, now);       // C5
+                    osc.frequency.setValueAtTime(659.25, now + 0.15); // E5
+                    osc.frequency.setValueAtTime(783.99, now + 0.3);  // G5
+                    osc.frequency.setValueAtTime(1046.50, now + 0.45);// C6
+                    gain.gain.setValueAtTime(0.35, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 1.0);
+                    osc.start(now);
+                    osc.stop(now + 1.0);
+                }
+            } catch (e) {
+                console.log("Audio not allowed yet");
+            }
+        }
+
+        function toggleSound() {
+            state.soundEnabled = !state.soundEnabled;
+            const btn = document.getElementById('sound-toggle-btn');
+            btn.innerHTML = state.soundEnabled ? '🔊' : '🔇';
+        }
+
+        /*******************************************************
+         * 5. SCREEN SWITCHING LOGIC
+         *******************************************************/
+        function showScreen(screenId) {
+            playSound('click');
+            const activeScreen = document.querySelector('.screen.active');
+            if (activeScreen) {
+                state.previousScreen = activeScreen.id;
+                activeScreen.classList.remove('active');
+            }
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        function goBackFromTable() {
+            if (state.previousScreen && document.getElementById(state.previousScreen)) {
+                showScreen(state.previousScreen);
+            } else {
+                showScreen('start-screen');
+            }
+        }
+
+        /*******************************************************
+         * 6. LEVEL & MODE SELECTION
+         *******************************************************/
+        function selectDifficulty(diff) {
+            playSound('click');
+            state.difficulty = diff;
+            document.querySelectorAll('.level-btn').forEach(btn => btn.classList.remove('selected'));
+            document.getElementById('diff-' + diff).classList.add('selected');
+        }
+
+        function selectMode(modeNum) {
+            playSound('click');
+            state.mode = modeNum;
+            document.querySelectorAll('.mode-card').forEach(card => card.classList.remove('selected'));
+            document.getElementById('mode-' + modeNum).classList.add('selected');
+        }
+
+        /*******************************************************
+         * 7. GAME INITIALIZATION & START
+         *******************************************************/
+        function startGame() {
+            playSound('click');
+            state.score = 0;
+            state.correct = 0;
+            state.wrong = 0;
+            state.isAnswered = false;
+
+            updateScoreUI();
+            showScreen('game-screen');
+
+            // Set Header mode label
+            const labels = {
+                1: 'مرحله ۱: حرف به شماره جایگاه',
+                2: 'مرحله ۲: شماره جایگاه به حرف',
+                3: 'مرحله ۳: بازی سرعتی (ترکیبی)'
+            };
+            document.getElementById('game-mode-label').innerText = labels[state.mode];
+
+            nextQuestion();
+        }
+
+        /*******************************************************
+         * 8. QUESTION GENERATOR (WITH EASY/MEDIUM/HARD RULES)
+         *******************************************************/
+        function nextQuestion() {
+            state.isAnswered = false;
+            clearInterval(state.timerInterval);
+
+            // Choose alphabet pool based on difficulty
+            let pool = ALPHABET;
+            if (state.difficulty === 'easy') {
+                // Easy: First 15 letters
+                pool = ALPHABET.slice(0, 15);
+            }
+
+            // Pick correct answer
+            const correctItem = pool[Math.floor(Math.random() * pool.length)];
+            state.currentQuestion = correctItem;
+
+            // Generate 3 unique wrong options
+            let options = [correctItem];
+            while (options.length < 4) {
+                const randomItem = pool[Math.floor(Math.random() * pool.length)];
+                if (!options.some(item => item.id === randomItem.id)) {
+                    options.push(randomItem);
+                }
+            }
+
+            // Shuffle options
+            options = options.sort(() => Math.random() - 0.5);
+            state.options = options;
+
+            // Determine question mode (for Mode 3 speed mixed, random 1 or 2)
+            let qMode = state.mode;
+            if (state.mode === 3) {
+                qMode = Math.random() > 0.5 ? 1 : 2;
+            }
+
+            // Render Question Card
+            const labelEl = document.getElementById('question-label');
+            const valEl = document.getElementById('question-value');
+            const helpEl = document.getElementById('question-help');
+
+            valEl.style.animation = 'none';
+            void valEl.offsetWidth; // Trigger reflow
+            valEl.style.animation = 'popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+
+            if (qMode === 1) {
+                // Char -> Num
+                labelEl.innerText = "جایگاه این حرف کدام است؟";
+                valEl.innerText = correctItem.char;
+                helpEl.innerText = `حرف «${correctItem.char}» چندمین حرف الفبای فارسی است؟`;
+            } else {
+                // Num -> Char
+                labelEl.innerText = `حرف شماره ${toPersianNum(correctItem.id)} کدام است؟`;
+                valEl.innerText = toPersianNum(correctItem.id);
+                helpEl.innerText = `کدام حرف در جایگاه ${toPersianNum(correctItem.id)} الفبا قرار دارد؟`;
+            }
+
+            // Render Choice Buttons
+            const choicesGrid = document.getElementById('choices-grid');
+            choicesGrid.innerHTML = '';
+
+            options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'choice-btn';
+                btn.innerText = qMode === 1 ? toPersianNum(opt.id) : opt.char;
+                btn.onclick = () => checkAnswer(index, qMode);
+                choicesGrid.appendChild(btn);
+            });
+
+            // Start Timer based on level & mode
+            if (state.mode === 3) {
+                // Speed game: less time
+                state.totalTime = state.difficulty === 'hard' ? 7 : (state.difficulty === 'medium' ? 10 : 13);
+            } else {
+                state.totalTime = state.difficulty === 'hard' ? 10 : (state.difficulty === 'medium' ? 15 : 20);
+            }
+            state.timeRemaining = state.totalTime;
+            startTimer();
+        }
+
+        /*******************************************************
+         * 9. TIMER & SPEED CONTROL
+         *******************************************************/
+        function startTimer() {
+            const bar = document.getElementById('timer-bar');
+            bar.style.width = '100%';
+            bar.classList.remove('warning');
+
+            const step = 0.1;
+            state.timerInterval = setInterval(() => {
+                state.timeRemaining -= step;
+                const percent = Math.max(0, (state.timeRemaining / state.totalTime) * 100);
+                bar.style.width = percent + '%';
+
+                if (percent < 30) {
+                    bar.classList.add('warning');
+                }
+
+                if (state.timeRemaining <= 0) {
+                    clearInterval(state.timerInterval);
+                    handleTimeout();
+                }
+            }, step * 1000);
+        }
+
+        function handleTimeout() {
+            if (state.isAnswered) return;
+            state.isAnswered = true;
+            state.wrong++;
+            playSound('wrong');
+
+            // Highlight correct button
+            const buttons = document.querySelectorAll('.choice-btn');
+            state.options.forEach((opt, idx) => {
+                if (opt.id === state.currentQuestion.id) {
+                    buttons[idx].classList.add('correct');
+                }
+            });
+
+            updateScoreUI();
+
+            setTimeout(() => {
+                nextQuestion();
+            }, 1500);
+        }
+
+        /*******************************************************
+         * 10. ANSWER VERIFICATION & SCORING
+         *******************************************************/
+        function checkAnswer(index, qMode) {
+            if (state.isAnswered) return;
+            state.isAnswered = true;
+            clearInterval(state.timerInterval);
+
+            const selectedOpt = state.options[index];
+            const buttons = document.querySelectorAll('.choice-btn');
+            const selectedBtn = buttons[index];
+
+            if (selectedOpt.id === state.currentQuestion.id) {
+                // CORRECT
+                selectedBtn.classList.add('correct');
+                playSound('correct');
+                state.correct++;
+
+                // Score formula: Base 10 + Time bonus
+                const timeBonus = Math.round((state.timeRemaining / state.totalTime) * 10);
+                state.score += (10 + timeBonus);
+
+                // Confetti burst on correct
+                triggerConfetti(15);
+            } else {
+                // WRONG
+                selectedBtn.classList.add('wrong');
+                playSound('wrong');
+                state.wrong++;
+
+                // Show the correct one
+                state.options.forEach((opt, idx) => {
+                    if (opt.id === state.currentQuestion.id) {
+                        buttons[idx].classList.add('correct');
+                    }
+                });
+            }
+
+            updateScoreUI();
+
+            setTimeout(() => {
+                nextQuestion();
+            }, 1400);
+        }
+
+        function updateScoreUI() {
+            document.getElementById('score-val').innerText = toPersianNum(state.score);
+            document.getElementById('correct-val').innerText = toPersianNum(state.correct);
+            document.getElementById('wrong-val').innerText = toPersianNum(state.wrong);
+
+            const total = state.correct + state.wrong;
+            const acc = total === 0 ? 100 : Math.round((state.correct / total) * 100);
+            document.getElementById('acc-val').innerText = toPersianNum(acc) + '٪';
+
+            // Check & Save High Score in LocalStorage
+            if (state.score > state.highScore) {
+                state.highScore = state.score;
+                localStorage.setItem('persian_alpha_game_high_score', state.highScore);
+            }
+        }
+
+        /*******************************************************
+         * 11. END GAME & MOTIVATIONAL MESSAGES
+         *******************************************************/
+        function endGame() {
+            clearInterval(state.timerInterval);
+            playSound('win');
+            triggerConfetti(80);
+
+            const total = state.correct + state.wrong;
+            const acc = total === 0 ? 0 : Math.round((state.correct / total) * 100);
+
+            document.getElementById('final-score').innerText = toPersianNum(state.score);
+            document.getElementById('final-correct').innerText = toPersianNum(state.correct);
+            document.getElementById('final-wrong').innerText = toPersianNum(state.wrong);
+            document.getElementById('final-acc').innerText = toPersianNum(acc) + '٪';
+            document.getElementById('final-best').innerText = toPersianNum(state.highScore);
+
+            // Dynamic motivational messages
+            const msgEl = document.getElementById('motivational-msg');
+            if (acc >= 90 && state.correct >= 5) {
+                msgEl.innerText = "آفرین! تو یک قهرمان حروف الفبا هستی 🌟";
+            } else if (acc >= 75) {
+                msgEl.innerText = "عالی بودی! جایگاه حروف را خیلی خوب بلدی 👏";
+            } else if (state.correct >= 3) {
+                msgEl.innerText = "خوب بود! با کمی تمرین بیشتر بی‌نقص می‌شوی 🎯";
+            } else {
+                msgEl.innerText = "تلاش خوبی بود! جدول الفبا را مرور کن و دوباره بازی کن 💪";
+            }
+
+            showScreen('result-screen');
+        }
+
+        /*******************************************************
+         * 12. ALPHABET TABLE BUILDER
+         *******************************************************/
+        function renderAlphabetTable() {
+            const grid = document.getElementById('alphabet-table-grid');
+            grid.innerHTML = '';
+
+            ALPHABET.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'alpha-card';
+                card.innerHTML = `
+                    <span class="alpha-num">شماره ${toPersianNum(item.id)}</span>
+                    <span class="alpha-char">${item.char}</span>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        /*******************************************************
+         * 13. CONFETTI ANIMATION (CANVAS-BASED)
+         *******************************************************/
+        const canvas = document.getElementById('confetti-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resizeCanvas() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+        function triggerConfetti(count = 30) {
+            resizeCanvas();
+            const colors = ['#6366f1', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6'];
+
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x: canvas.width / 2,
+                    y: canvas.height / 3,
+                    vx: (Math.random() - 0.5) * 12,
+                    vy: (Math.random() - 0.7) * 14,
+                    size: Math.random() * 8 + 4,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    alpha: 1,
+                    rotation: Math.random() * 360,
+                    rotationSpeed: (Math.random() - 0.5) * 10
+                });
+            }
+
+            if (particles.length <= count) {
+                requestAnimationFrame(updateConfetti);
+            }
+        }
+
+        function updateConfetti() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.4; // gravity
+                p.alpha -= 0.015;
+                p.rotation += p.rotationSpeed;
+
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, p.alpha);
+                ctx.translate(p.x, p.y);
+                ctx.rotate((p.rotation * Math.PI) / 180);
+                ctx.fillStyle = p.color;
+                ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+                ctx.restore();
+
+                if (p.alpha <= 0 || p.y > canvas.height) {
+                    particles.splice(i, 1);
+                }
+            }
+
+            if (particles.length > 0) {
+                requestAnimationFrame(updateConfetti);
+            }
+        }
+
+        /*******************************************************
+         * 14. INITIALIZE ON LOAD
+         *******************************************************/
+        window.addEventListener('DOMContentLoaded', () => {
+            // Load High Score from LocalStorage
+            const savedScore = localStorage.getItem('persian_alpha_game_high_score');
+            if (savedScore) {
+                state.highScore = parseInt(savedScore, 10);
+                document.getElementById('high-score-display').innerText = toPersianNum(state.highScore);
+            }
+
+            // Render Complete Alphabet Table
+            renderAlphabetTable();
+
+            // Setup canvas size
+            setTimeout(resizeCanvas, 100);
+        });
+    </script>
+</body>
+</html>
